@@ -1,0 +1,150 @@
+SpringBoot Security  :
+
+	* SpringBoot Security it helps to protect your application better.
+	
+	* Whenever the client request anything it goes into Security FilterChain it do some validation it successfully validate
+when only it allow to access the resources or goes another step.
+
+	* @EnableWebSecurity is annotation create the Security FilterChain.
+
+	* Security filter chain: [
+		  WebAsyncManagerIntegrationFilter
+		  SecurityContextPersistenceFilter
+		  HeaderWriterFilter
+		  CsrfFilter
+		  LogoutFilter
+		  UsernamePasswordAuthenticationFilter
+		  DefaultLoginPageGeneratingFilter
+		  DefaultLogoutPageGeneratingFilter
+		  BasicAuthenticationFilter
+		  RequestCacheAwareFilter
+		  SecurityContextHolderAwareRequestFilter
+		  AnonymousAuthenticationFilter
+		  SessionManagementFilter
+		  ExceptionTranslationFilter
+		  FilterSecurityInterceptor
+	  ]
+	  
+	* How to configurer Security Filterchain means @EnableWebSecurity(debug=true) in websecurityconig file also see the all
+filterchain in console because debug=true.
+
+---------------------------------------------------------------------------------------------------------------------------------
+LoginPage Process : ScreenShot -> 16 , Refer the PPT
+
+	* LoginPage Submit Button Clicked -> DelegatingFilterProxy -> Spring FilterChainProxy -> UsernamePasswordAuthenticationFilter
+( comes only UsernamePasswordAuthentication Only ) this is class it call method like attemptAuthentication( inside it call 
+UsernamePasswordAuthenticationToken )return type is Authentication it goes into AuthenticationManager( but it's interface so what
+class implement this interface then call goto that class ProviderManager) -> Filter create the Authentication Object pass the 
+object into -> Authentication Manager -> Provider Manager -> Authentication Provider(default Provider is 
+DaoAuthenticationProvider) -> UserDetailsService -> loadUserByUsername abstract method of UserDetailsService it return 
+UserDetails -> UserDetails have some abstract method that interface use User class -> the User class stored the retrieved data 
+from DB based on Username.
+
+	* After Successfully validated the User object goes to -> AuthenticationProvider -> Authentication Manager -> Authentication
+Filter -> Security Context Holder then the same client raised on another request means it check the Security Context Holder the 
+user is available or not.
+
+	* User give the login credentials then it goes into DelegatingFilterProxy it do servlet credentials into Authentication 
+object.
+	
+	* Filter Call the Authentication Manager have argument as Authentication object, Manager call the Provider Manager 
+because Authentication Manager doesn't know which Authenticator Provider we need to call but Provider Manager capable to find
+which Authentication Provider will solve this request how to find means every Authenticate Provider it return true or false based
+on the request, Provider Manager it call all Authenticate Provider which provider it true then it capable to handle the request
+this the way to find AuthenticationProvider then process based on your DB.
+
+	* Example Request able to process DaoAuthenticationProvider means the provider call the DaoAuthenticationProvider this call 
+the	UserDetailsService interface, this interface have the abstract method loadUserByUsername it return UserDetails object but it
+an interface, this interface have many abstract like getUsername(),getPassword(),getAuthoritites,....., have another class User 
+this class implements UserDetails interface User class capable to store retrieved data from the DB then validate based the 
+request and DB.
+
+	* Authentication providers are responsible to perform a specific authentication. Spring security provides several 
+AuthenticationProvider. Remember these AuthenticationProviders can’t execute directly, but spring security uses ProviderManager 
+class which delegates to a list of configured authentication providers.
+
+Real Example for LoginPage Proccess: 
+
+	* We create an UsernamePasswordAuthenticationTokem from the supplied username and password.
+	
+	* We pass this token to the authentication manager.
+	
+	* The provider manager will delegate the authentication to the DaoAuthenticationProvider including the authentication token.
+	
+	* The DaoAuthenticationProvider use the custom UserDetailsService service to get the customer information from the database.
+	
+	* On successful authentication, the authentication object will contain the fully populated object including the authorities 
+details.
+	
+	* The returned UsernamePasswordAuthenticationToken will be set on the SecurityContextHolder by the authentication Filter.
+
+---------------------------------------------------------------------------------------------------------------------------------
+Add Your Own Filter : ScreenShot : 17,18
+
+	* Filter is an interface in springboot it have the abstract doFilter method to implements the interface and override the 
+doFilter(last line of doFilter method you need tell pass reqeust, response to the other filters) methods means you have your own
+filter but it not enough you need to add your filter in the filter chain goto what class extends WebSecurityConfigurerAdapter 
+class ( refer screenshots).
+
+---------------------------------------------------------------------------------------------------------------------------------
+SpringBoot Security Session and Token Based :
+
+	* Token Based Authentication happens two ways Stateful Authentication(Session Based) and Stateless Authentication(jwt based).
+	
+	* Session Based it happens in Server Side For example -> user try to login gives the user give there credentials to server 
+the server validate details through database if successfully vaidate it creates the Unique SessionId it stored in Server and the 
+server return the response in cookies contains the session details also ( Cookie is a like a transport to pass your session ) 
+the user side it stored in browser the user hit another request means the session also goes the server validate the session
+if successfully then only continue process otherwise you need login again.
+
+	* It will create one HTTP Session at server side when client is successfully authenticated one SessionId is provided and
+same is sent to client using Response as one Cookie Client Machine, for next request onwards, submits cookie to server, then 
+server verifies and provides service, until logout.
+
+	* Session Based token DisAdvantages, in microservice we have use multiple server but session based is independent on the
+server for example you have login one server and access resources on another server means the resource server doesn't know who
+you are because of login server only holds your session id.
+
+	* Token based Authentication it happens in user side, first time you login the server give the jwt token by signature the
+server everytime the user hit another request the header contains the jwt so you can communicated different server they need 
+only how to validate the signature.
+
+	* It will never create any memory at server side, for a client authentication one unique number is generated by server is
+called Token. Token can be created using SecretKey and Generated Token can be read using Same SecretKey only.
+
+	* This generated token is sent to client machine using Response, client has the responsibility to safe your token and token
+is valid only for a period of time.
+
+	* Horizantal Scaling means deploye your application into multiple server because of manager your performance.
+	
+	* Vertical Scaling means deploye your appliation into single server you are enhance the feature the cpu and otherthings only.
+	
+---------------------------------------------------------------------------------------------------------------------------------
+SpringBoot Security Token Based :
+
+	* Json Web Token it contains three parts Header, Payload and Signature. All three part are encoded using base64. The 
+Signature is tightly coupled by Header and Payload Suppose your jwt header,payload is stolen and change some change because
+it open's you can easy decoder the header and payload but in signature is encrypted by secretKey so it not possible to decrypt
+and access your resources.
+
+	* Signature is combination of Header + Payload encrypted using server secretKey.
+
+	* JWT is used for Authorization, whenever the new user enter they give the user credentials then it generate the jwt token
+using that token for subsequent request then only the server know you already authentication so you authorize to use the 
+resources.
+
+	** Don't send any confidential/ sensitive information in a JWT.
+	
+	* JJWT -> Java JWT Api is a open source java Api by working with JWT(add dependency).
+
+DisAdvantages of JWT : 
+
+	* Suppose someone stolen your jwt means it works for theaf because server doesn't know who sent it the jwt so check using
+https not http. You can also use OAuth to protect your jwt.
+
+---------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
